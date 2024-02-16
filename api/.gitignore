@@ -1,0 +1,31 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+
+# IDE specific files
+.idea/
+.vscode/
+
+# Environment variables
+.env
+
+# Static files
+staticfiles/
+
+# Media files
+media/
+
+# Database
+*.sqlite3
+
+# Logs
+*.log
+
+# Ignore migrations except for initial migrations
+**/migrations/*
+!**/migrations/__init__.py
