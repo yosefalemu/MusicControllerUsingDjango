@@ -12,9 +12,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const CreateRoomPage = () => {
+  const navigate = useNavigate();
   const [guest_can_pause, setGuest_can_pause] = useState(true);
   const [votes_to_skip, setVotes_to_skip] = useState(1);
   console.log(votes_to_skip);
@@ -26,7 +27,7 @@ const CreateRoomPage = () => {
     const requestOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ data: data }),
     };
     console.log(requestOptions);
     fetch("/api/create-room/", requestOptions)
@@ -36,8 +37,9 @@ const CreateRoomPage = () => {
         }
         return response.json();
       })
-      .then((response) => {
-        console.log("Response:", response);
+      .then((data) => {
+        console.log("Response:", data);
+        navigate(`/room/${data.code}`);
       })
       .catch((error) => {
         console.log(error);
