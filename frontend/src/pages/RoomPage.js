@@ -1,15 +1,19 @@
 import { Box, Paper, Typography, Grid, Button } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const RoomPage = () => {
   const navigate = useNavigate();
   const code = useParams().roomCode;
+  const { id } = useSelector((state) => state.user.currentUser);
   const [error, setError] = useState("");
   const [roomData, setRoomData] = useState(null);
 
+  console.log("user id in ger room", id);
+
   useEffect(() => {
-    fetch(`/api/get-room/?code=${code}`)
+    fetch(`/api/get-room/?code=${code}&id=${id}`)
       .then((response) => {
         return response.json();
       })

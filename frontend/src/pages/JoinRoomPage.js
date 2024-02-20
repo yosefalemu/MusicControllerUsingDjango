@@ -72,7 +72,7 @@ const JoinRoomPage = () => {
               Enter Room
             </Button>
           </Grid>
-          <Grid item xs={12} align="center" component={Link} to={"/"}>
+          <Grid item xs={12} align="center" component={Link} to={"/home"}>
             <Button variant="contained" color="warning">
               Back
             </Button>

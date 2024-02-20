@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import { Box, Button, Grid, Paper, TextField, Typography } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginUserSuccess } from "../redux/slices/userSlice";
+import ClipLoader from "react-spinners/ClipLoader";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState({
     email: "",
     password: "",
@@ -17,7 +23,7 @@ const LoginPage = () => {
   const handleFormChange = (event) => {
     const { name, value } = event.target;
     setUser({ ...user, [name]: value });
-    setErrors({ ...errors, [name]: false }); // Clear error when typing in the field
+    setErrors({ ...errors, [name]: false });
   };
 
   const handleLoginIn = () => {
@@ -31,7 +37,9 @@ const LoginPage = () => {
     }
     if (hasError) {
       setErrors(newError);
+      return;
     } else {
+      setLoading(true);
       const requestOptions = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -39,18 +47,28 @@ const LoginPage = () => {
       };
       fetch("/api/login/", requestOptions)
         .then((response) => {
+          setLoading(false);
           return response.json();
         })
         .then((data) => {
-          console.log(data);
+          setLoading(false);
+          console.log("data in json", data);
           if (!data.error) {
-            navigate("/");
+            dispatch(loginUserSuccess(data));
+            toast.success("Logged in");
+            setTimeout(() => {
+              navigate("/home");
+            }, 4000);
+          } else {
+            console.log("error to toast", data.error);
+            toast.error(data.error);
+            throw new Error(errors_to_toast);
           }
         })
         .catch((error) => {
-          console.log(error);
+          setLoading(false);
+          console.log("error found", error);
         });
-      console.log("Logging in with:", user);
     }
   };
 
@@ -70,6 +88,15 @@ const LoginPage = () => {
         <Grid container rowSpacing={3}>
           <Grid item xs={12} align="center">
             <Typography variant="h4">Login</Typography>
+          </Grid>
+          <Grid item xs={12} align="center">
+            <ClipLoader
+              color={"#36d7b7"}
+              loading={loading}
+              size={50}
+              aria-label="Loading Spinner"
+              data-testid="loader"
+            />
           </Grid>
           <Grid item xs={12} align={"center"}>
             <TextField
@@ -106,7 +133,7 @@ const LoginPage = () => {
             <Typography>Dont have an account?</Typography>
           </Grid>
           <Grid item xs={12} align="center">
-            <Button component={Link} to="/signup">
+            <Button component={Link} to="/">
               Signup
             </Button>
           </Grid>

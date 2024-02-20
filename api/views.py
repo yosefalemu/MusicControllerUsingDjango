@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import generics,status
-from .models import Room,CustomUser
+from .models import Room,CustomUser,Membership
 from .serializers import RoomSerializer,CreateRoomSerializer,JoinRoomSerializer,CustomUserSerializer,LoginUserSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
@@ -16,22 +16,24 @@ class RoomView(generics.ListAPIView):
 class CreateUser(APIView):
     parser_classes = (MultiPartParser, FormParser)
     serializer_class = CustomUserSerializer
-
     def post(self, request,):
         if not self.request.session.exists(self.request.session.session_key):
             self.request.session.create()
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            # Save the user instance  
-            user = serializer.save()
-            print("user created",user)  
-            return JsonResponse({'message': 'User created successfully'}, status=status.HTTP_200_OK)
+            email = serializer.validated_data.get('email')
+            username = serializer.validated_data.get('username')
+            if CustomUser.objects.filter(username=username).exists():
+                return JsonResponse({'error':'Username is taken'},status=status.HTTP_400_BAD_REQUEST)
+            if CustomUser.objects.filter(email=email).exists():
+                return JsonResponse({'error':'Email taken'},status=status.HTTP_400_BAD_REQUEST)
+            user = serializer.save()  
+            return JsonResponse(CustomUserSerializer(user).data, status=status.HTTP_200_OK)
         else:   
-            return JsonResponse({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'error': 'invalid input'}, status=status.HTTP_400_BAD_REQUEST)
 # Login user
 class LoginUser(APIView):
     serializer_class = LoginUserSerializer
-    
     def post(self, request):
         data_from_frontend = request.data.get('data', {})
         serializer = self.serializer_class(data=data_from_frontend)
@@ -41,11 +43,12 @@ class LoginUser(APIView):
             password = serializer.validated_data.get("password")
             
             user = CustomUser.objects.filter(email=email).first()
-            
+            rooms = user.room_set.all()
+            print("all rooms",rooms)
             if user:
                 if check_password(password, user.password):
                     print("Password correct")
-                    return JsonResponse({'message': 'Login successfully'}, status=status.HTTP_200_OK)
+                    return Response(CustomUserSerializer(user).data,status=status.HTTP_200_OK)
                 else:
                     print("Invalid password")
                     return JsonResponse({'error': 'Invalid password'}, status=status.HTTP_400_BAD_REQUEST)
@@ -54,7 +57,7 @@ class LoginUser(APIView):
                 return JsonResponse({'error': 'Email is not registered'}, status=status.HTTP_404_NOT_FOUND)
         else:
             print(serializer.errors)
-            return JsonResponse({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)     
+            return JsonResponse({'error': 'Invalid email'}, status=status.HTTP_400_BAD_REQUEST)     
      
 # Create Room    
 class CreateRoom(APIView):
@@ -64,36 +67,30 @@ class CreateRoom(APIView):
             self.request.session.create()
         data_from_frontend = request.data.get('data', {})
         serializer = self.serializer_class(data=data_from_frontend)
+        print("serializer",serializer)
         if serializer.is_valid():
-            guest_can_pause = serializer.data.get('guest_can_pause')
-            votes_to_skip = serializer.data.get('votes_to_skip')
-            host = self.request.session.session_key
-            queryset = Room.objects.filter(host=host)
-            if queryset.exists():
-                room = queryset[0]
-                room.guest_can_pause = guest_can_pause
-                room.votes_to_skip = votes_to_skip
-                room.save(update_fields=['guest_can_pause','votes_to_skip'])
-                return Response(RoomSerializer(room).data,status=status.HTTP_200_OK)
-            else:
-                room = Room(host=host,guest_can_pause=guest_can_pause,votes_to_skip=votes_to_skip)
-                room.save()
-                return Response(RoomSerializer(room).data,status=status.HTTP_201_CREATED)
-        return Response({'Bad Request':'Invalid data'},status=status.HTTP_400_BAD_REQUEST)
+            host = serializer.validated_data.get('host')
+            print("host",host)
+            room = serializer.save()
+            Membership.objects.create(user=host,room=room)
+            return JsonResponse(RoomSerializer(room).data,status=status.HTTP_201_CREATED)
+        return JsonResponse({'error':serializer.errors},status=status.HTTP_400_BAD_REQUEST)
  
 #Get Room
 class GetRoom(APIView):
     serializer_class = RoomSerializer
-    lookup_url_kwarg = 'code'
-
     def get(self, request, format=None):
-        code = request.GET.get(self.lookup_url_kwarg)
+        code = request.GET.get('code')
+        id = int(request.GET.get('id'))
         if code != None:
-            room = Room.objects.filter(code=code)
-            if len(room) > 0:
-                data = RoomSerializer(room[0]).data
-                data['is_host'] = self.request.session.session_key == room[0].host
-                return Response(data, status=status.HTTP_200_OK)
+            room = Room.objects.filter(code=code).first()
+            print("room",room)
+            if room:
+                members = room.members.all()
+                print("all members",members)
+                room = RoomSerializer(room).data
+                room['is_host'] = room["host"] == id
+                return Response(room, status=status.HTTP_200_OK)
             return Response({'Room Not Found': 'Invalid Room Code.'}, status=status.HTTP_404_NOT_FOUND)
 
         return Response({'Bad Request': 'Code paramater not found in request'}, status=status.HTTP_400_BAD_REQUEST)

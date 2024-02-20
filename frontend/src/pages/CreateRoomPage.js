@@ -13,16 +13,19 @@ import {
   Typography,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const CreateRoomPage = () => {
   const navigate = useNavigate();
   const [guest_can_pause, setGuest_can_pause] = useState(true);
   const [votes_to_skip, setVotes_to_skip] = useState(1);
+  const current_user_id = useSelector((state) => state.user.currentUser.id);
   console.log(votes_to_skip);
   console.log(guest_can_pause);
+  console.log("current user id", current_user_id);
 
   const handleButtonClicked = () => {
-    const data = { guest_can_pause, votes_to_skip };
+    const data = { guest_can_pause, votes_to_skip, host: current_user_id };
     console.log(data);
     const requestOptions = {
       method: "POST",
@@ -32,14 +35,17 @@ const CreateRoomPage = () => {
     console.log(requestOptions);
     fetch("/api/create-room/", requestOptions)
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
         return response.json();
       })
       .then((data) => {
-        console.log("Response:", data);
-        navigate(`/room/${data.code}`);
+        console.log("Response from database", data);
+        if (!data.error) {
+          setTimeout(() => {
+            navigate(`/room/${data.code}`);
+          }, 4000);
+        } else {
+          throw new Error();
+        }
       })
       .catch((error) => {
         console.log(error);
@@ -109,7 +115,12 @@ const CreateRoomPage = () => {
             </Button>
           </Grid>
           <Grid item xs={12} align="center">
-            <Button component={Link} to="/" color="warning" variant="contained">
+            <Button
+              component={Link}
+              to="/home"
+              color="warning"
+              variant="contained"
+            >
               Back
             </Button>
           </Grid>

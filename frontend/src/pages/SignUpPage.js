@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { Box, Button, Grid, Paper, TextField, Typography } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ClipLoader from "react-spinners/ClipLoader";
+import toast from "react-hot-toast";
 
 const SignUpPage = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState({
     first_name: "",
     last_name: "",
@@ -69,25 +73,36 @@ const SignUpPage = () => {
       return;
     }
 
-    try {
-      const formData = new FormData();
-      for (const key in user) {
-        formData.append(key, user[key]);
-      }
-
-      const requestOptions = {
-        method: "POST",
-        body: formData,
-      };
-
-      const response = await fetch("/api/signup/", requestOptions);
-      const data = await response.json();
-
-      console.log(data);
-      // Handle response data as needed
-    } catch (error) {
-      console.error("Error:", error);
+    const formData = new FormData();
+    for (const key in user) {
+      formData.append(key, user[key]);
     }
+    const requestOptions = {
+      method: "POST",
+      body: formData,
+    };
+    setLoading(true);
+    fetch("/api/signup/", requestOptions)
+      .then((response) => {
+        setLoading(false);
+        return response.json();
+      })
+      .then((data) => {
+        setLoading(false);
+        if (!data.error) {
+          toast.success("User created");
+          setTimeout(() => {
+            navigate("/home");
+          }, 4000);
+        } else {
+          toast.error(data.error);
+          throw new Error();
+        }
+      })
+      .then((error) => {
+        setLoading(false);
+        console.log(error);
+      });
   };
 
   return (
@@ -106,6 +121,15 @@ const SignUpPage = () => {
         <Grid container rowSpacing={3}>
           <Grid item xs={12} align="center">
             <Typography variant="h4">Sign Up</Typography>
+          </Grid>
+          <Grid item xs={12} align="center">
+            <ClipLoader
+              color={"#36d7b7"}
+              loading={loading}
+              size={50}
+              aria-label="Loading Spinner"
+              data-testid="loader"
+            />
           </Grid>
           <Grid item xs={12} align={"center"}>
             <TextField

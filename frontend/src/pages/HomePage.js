@@ -4,22 +4,22 @@ import { Link, useNavigate } from "react-router-dom";
 
 const HomePage = () => {
   const navigate = useNavigate();
-  useEffect(() => {
-    fetch("/api/get-user-room/")
-      .then((response) => {
-        console.log("first response", response);
-        return response.json();
-      })
-      .then((data) => {
-        console.log("second response", data);
-        if (data?.code !== null) {
-          navigate(`/room/${data?.code}`);
-        }
-      })
-      .catch((error) => {
-        console.log("error that found", error);
-      });
-  }, []);
+  // useEffect(() => {
+  //   fetch("/api/get-user-room/")
+  //     .then((response) => {
+  //       console.log("first response", response);
+  //       return response.json();
+  //     })
+  //     .then((data) => {
+  //       console.log("second response", data);
+  //       if (data?.code !== null) {
+  //         navigate(`/room/${data?.code}`);
+  //       }
+  //     })
+  //     .catch((error) => {
+  //       console.log("error that found", error);
+  //     });
+  // }, []);
   return (
     <Box
       sx={{
