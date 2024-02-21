@@ -1,35 +1,31 @@
 import React, { useState } from "react";
 import { Grid, Typography, Button, TextField, Box, Paper } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const JoinRoomPage = () => {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [errorValue, setErrorValue] = useState("");
+  const { id } = useSelector((state) => state.user.currentUser);
 
   const handleClick = () => {
     console.log(code);
     const requestOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: code }),
+      body: JSON.stringify({ code: code, id: id }),
     };
 
     console.log(requestOptions.body);
     fetch("/api/join-room/", requestOptions)
       .then((response) => {
-        if (!response.ok) {
-          console.log("first response", response);
-          return response.json();
-        }
-        return;
+        return response.json();
       })
       .then((data) => {
         console.log("Responded data", data);
         if (data?.error) {
-          const error = data.error;
-          console.log("error", error);
-          throw new Error(error);
+          throw new Error();
         } else {
           navigate(`/room/${code}`);
         }

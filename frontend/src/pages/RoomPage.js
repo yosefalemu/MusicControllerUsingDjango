@@ -1,10 +1,9 @@
 import { Box, Paper, Typography, Grid, Button } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 const RoomPage = () => {
-  const navigate = useNavigate();
   const code = useParams().roomCode;
   const { id } = useSelector((state) => state.user.currentUser);
   const [error, setError] = useState("");
@@ -30,7 +29,13 @@ const RoomPage = () => {
     const requestOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        is_host: roomData?.is_host,
+        room_id: roomData?.id,
+        user_id: id,
+      }),
     };
+    console.log(requestOptions.body);
     fetch("/api/remove-user-from-room/", requestOptions)
       .then((response) => {
         console.log("first response", response);
@@ -38,11 +43,9 @@ const RoomPage = () => {
       })
       .then((data) => {
         console.log("second response", data);
-        navigate("/");
       })
       .catch((error) => {
         console.log("error occured", error);
-        navigate("/");
       });
     console.log("button clicked");
   };
@@ -106,6 +109,28 @@ const RoomPage = () => {
               onClick={handleLeaveRoom}
             >
               Leave Room
+            </Button>
+          </Grid>
+          {roomData?.is_host && (
+            <Grid item xs={12} align="center">
+              <Button
+                color="warning"
+                variant="contained"
+                component={Link}
+                to={`/room/edit/${code}`}
+              >
+                Edit Room
+              </Button>
+            </Grid>
+          )}
+          <Grid item xs={12} align="center">
+            <Button
+              color="primary"
+              variant="contained"
+              component={Link}
+              to="/home"
+            >
+              Back
             </Button>
           </Grid>
         </Grid>

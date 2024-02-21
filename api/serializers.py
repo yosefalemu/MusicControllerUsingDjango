@@ -30,5 +30,9 @@ class LoginUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['email', 'password']
+class EditUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = ['id','guest_can_pause','votes_to_skip']
     
     

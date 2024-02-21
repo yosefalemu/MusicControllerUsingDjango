@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinLengthValidator,MaxLengthValidator
 from uuid import uuid4
+from datetime import datetime
 import string
 import random
 import os
@@ -42,3 +43,4 @@ class Room(models.Model):
 class Membership(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    date_joined = models.DateField(default=datetime.now)

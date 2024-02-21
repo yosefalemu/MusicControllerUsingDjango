@@ -92,7 +92,7 @@ const SignUpPage = () => {
         if (!data.error) {
           toast.success("User created");
           setTimeout(() => {
-            navigate("/home");
+            navigate("/login");
           }, 4000);
         } else {
           toast.error(data.error);

@@ -1,25 +1,25 @@
 import { Box, Button, ButtonGroup, Grid, Typography } from "@mui/material";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const HomePage = () => {
   const navigate = useNavigate();
-  // useEffect(() => {
-  //   fetch("/api/get-user-room/")
-  //     .then((response) => {
-  //       console.log("first response", response);
-  //       return response.json();
-  //     })
-  //     .then((data) => {
-  //       console.log("second response", data);
-  //       if (data?.code !== null) {
-  //         navigate(`/room/${data?.code}`);
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       console.log("error that found", error);
-  //     });
-  // }, []);
+  const { id } = useSelector((state) => state.user.currentUser);
+  const [userRooms, setUserRooms] = useState({});
+  useEffect(() => {
+    fetch(`/api/get-user-room/?id=${id}`)
+      .then((response) => {
+        console.log("first response", response);
+        return response.json();
+      })
+      .then((data) => {
+        console.log("second response", data);
+      })
+      .catch((error) => {
+        console.log("error that found", error);
+      });
+  }, []);
   return (
     <Box
       sx={{
@@ -53,6 +53,16 @@ const HomePage = () => {
               Create Room
             </Button>
           </ButtonGroup>
+        </Grid>
+        <Grid item xs={12} align="center">
+          <Button
+            color="error"
+            variant="contained"
+            component={Link}
+            to="/login"
+          >
+            Logout
+          </Button>
         </Grid>
       </Grid>
     </Box>
