@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
 
 const CreateRoomPage = () => {
   const navigate = useNavigate();
@@ -35,17 +36,22 @@ const CreateRoomPage = () => {
     console.log(requestOptions);
     fetch("/api/create-room/", requestOptions)
       .then((response) => {
-        return response.json();
+        if (response.ok) {
+          return response.json();
+        } else {
+          return response.json().then((error) => {
+            if (error.error) {
+              throw new Error(error.error);
+            }
+          });
+        }
       })
       .then((data) => {
         console.log("Response from database", data);
-        if (!data.error) {
-          setTimeout(() => {
-            navigate(`/room/${data.code}`);
-          }, 4000);
-        } else {
-          throw new Error();
-        }
+        toast.success("Room created successfully");
+        setTimeout(() => {
+          navigate(`/room/${data.code}`);
+        });
       })
       .catch((error) => {
         console.log(error);

@@ -16,14 +16,14 @@ const LoginPage = () => {
   });
 
   const [errors, setErrors] = useState({
-    email: false,
-    password: false,
+    email: "",
+    password: "",
   });
 
   const handleFormChange = (event) => {
     const { name, value } = event.target;
     setUser({ ...user, [name]: value });
-    setErrors({ ...errors, [name]: false });
+    setErrors({ ...errors, [name]: "" });
   };
 
   const handleLoginIn = () => {
@@ -32,7 +32,7 @@ const LoginPage = () => {
     for (const key in user) {
       if (user[key]?.trim() === "") {
         hasError = true;
-        newError[key] = true;
+        newError[key] = `${key} is required`;
       }
     }
     if (hasError) {
@@ -48,22 +48,32 @@ const LoginPage = () => {
       fetch("/api/login/", requestOptions)
         .then((response) => {
           setLoading(false);
-          return response.json();
+          if (response.ok) {
+            return response.json();
+          } else {
+            return response.json().then((error) => {
+              console.log("Error", error);
+              if (error.email) {
+                setErrors({ email: error.email });
+                throw new Error();
+              } else if (error.password) {
+                setErrors({ password: error.password });
+                throw new Error();
+              } else {
+                toast.error("Something went wrong");
+                throw new Error();
+              }
+            });
+          }
         })
         .then((data) => {
           setLoading(false);
-          console.log("data in json", data);
-          if (!data.error) {
-            dispatch(loginUserSuccess(data));
-            toast.success("Logged in");
-            setTimeout(() => {
-              navigate("/home");
-            }, 4000);
-          } else {
-            console.log("error to toast", data.error);
-            toast.error(data.error);
-            throw new Error(errors_to_toast);
-          }
+          const data_to_dispatch = { ...data.user, ...data.custom_user };
+          dispatch(loginUserSuccess(data_to_dispatch));
+          toast.success("Logged in");
+          setTimeout(() => {
+            navigate("/home");
+          }, 4000);
         })
         .catch((error) => {
           setLoading(false);
@@ -106,8 +116,8 @@ const LoginPage = () => {
               placeholder="Email"
               name="email"
               value={user.email}
-              error={errors.email}
-              helperText={errors.email && "Email is required"}
+              error={!!errors.email}
+              helperText={errors.email}
               onChange={handleFormChange}
             />
           </Grid>
@@ -119,8 +129,8 @@ const LoginPage = () => {
               placeholder="Password"
               name="password"
               value={user.password}
-              error={errors.password}
-              helperText={errors.password && "Password is required"}
+              error={!!errors.password}
+              helperText={errors.password}
               onChange={handleFormChange}
             />
           </Grid>

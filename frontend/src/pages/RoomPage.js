@@ -1,10 +1,12 @@
 import { Box, Paper, Typography, Grid, Button } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
 
 const RoomPage = () => {
   const code = useParams().roomCode;
+  const navigate = useNavigate();
   const { id } = useSelector((state) => state.user.currentUser);
   const [error, setError] = useState("");
   const [roomData, setRoomData] = useState(null);
@@ -19,6 +21,27 @@ const RoomPage = () => {
       .then((data) => {
         console.log("data to be displayed", data);
         setRoomData(data);
+        fetch("/spotify/is-spotify-authenticated")
+          .then((response) => {
+            return response.json();
+          })
+          .then((data) => {
+            console.log("response for authentication", data);
+            if (!data.status) {
+              fetch("/spotify/get-auth-url")
+                .then((response) => {
+                  return response.json();
+                })
+                .then((data) => {
+                  console.log(data);
+                  console.log("response for get auth url", data);
+                  window.location.replace(data.url);
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
+            }
+          });
       })
       .catch((error) => {
         setError(error);
@@ -43,6 +66,8 @@ const RoomPage = () => {
       })
       .then((data) => {
         console.log("second response", data);
+        toast.success(data.message);
+        navigate("/home");
       })
       .catch((error) => {
         console.log("error occured", error);

@@ -1,65 +1,112 @@
 from django.shortcuts import render
 from rest_framework import generics,status
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate,login
+from django.contrib.auth.hashers import check_password
 from .models import Room,CustomUser,Membership
-from .serializers import RoomSerializer,CreateRoomSerializer,CustomUserSerializer,LoginUserSerializer,CustomUserSerializer,EditUserSerializer
+from .serializers import UserSerializer,CustomUserSerializer,LoginUserSerializer,CreateRoomSerializer,RoomSerializer,EditUserSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import JsonResponse
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 # Default List Api Views
 class RoomView(generics.ListAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
 #create user
+from django.http import JsonResponse
+from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.views import APIView
+from .serializers import UserSerializer, CustomUserSerializer
+from django.contrib.auth.models import User
+
 class CreateUser(APIView):
     parser_classes = (MultiPartParser, FormParser)
-    serializer_class = CustomUserSerializer
-    def post(self, request,):
+
+    def post(self, request):
         if not self.request.session.exists(self.request.session.session_key):
             self.request.session.create()
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data.get('email')
-            username = serializer.validated_data.get('username')
-            if CustomUser.objects.filter(username=username).exists():
-                return JsonResponse({'error':'Username is taken'},status=status.HTTP_400_BAD_REQUEST)
-            if CustomUser.objects.filter(email=email).exists():
-                return JsonResponse({'error':'Email taken'},status=status.HTTP_400_BAD_REQUEST)
-            user = serializer.save()  
-            return JsonResponse(CustomUserSerializer(user).data, status=status.HTTP_200_OK)
-        else:   
-            return JsonResponse({'error': 'invalid input'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_serializer = UserSerializer(data=request.data)
+        custom_user_serializer = CustomUserSerializer(data=request.data)
+
+        if user_serializer.is_valid():
+            if custom_user_serializer.is_valid():             
+                # user_instance = user_serializer
+                # custom_user_instance = custom_user_serializer.save(user=user_instance)
+                user_data = user_serializer.validated_data
+                first_name = user_serializer.validated_data.get('first_name')
+                last_name = user_serializer.validated_data.get('last_name')
+                username = user_serializer.validated_data.get('username')
+                email = user_serializer.validated_data.get('email')
+                password = user_serializer.validated_data.get('password')
+                if len(first_name) < 3:
+                    return JsonResponse({'first_name':'First name should be atleast 3 characters'},status=status.HTTP_400_BAD_REQUEST)
+                if len(last_name) < 3:
+                    return JsonResponse({'last_name':'Last name should be atleast 3 characters'},status=status.HTTP_400_BAD_REQUEST) 
+                if len(username) < 3:
+                    return JsonResponse({'username':'Username should be atleast 3 characters'},status=status.HTTP_400_BAD_REQUEST) 
+                if len(password) < 6:
+                    return JsonResponse({'password':'Password should be atleast 6 characters'},status=status.HTTP_400_BAD_REQUEST)              
+                if User.objects.filter(email = email).first():
+                    return JsonResponse({'email':'Email is taken'},status=status.HTTP_400_BAD_REQUEST)
+                user_instance = User.objects.create_user(first_name = user_data['first_name'],last_name = user_data['last_name'],username = user_data['username'],email = user_data['email'],password = user_data['password'])
+                print("user instance to be created",user_instance)
+                custom_user_instance  = custom_user_serializer.save(user = user_instance)
+                print("custom user instance to be created",custom_user_instance)
+                response_data = {
+                    'user': UserSerializer(user_instance).data,
+                    'custom_user': CustomUserSerializer(custom_user_instance).data
+                }
+
+                return JsonResponse(response_data, status=status.HTTP_200_OK)
+            else:
+                return JsonResponse(custom_user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return JsonResponse(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 # Login user
 class LoginUser(APIView):
     serializer_class = LoginUserSerializer
+
     def post(self, request):
-        data_from_frontend = request.data.get('data', {})
-        serializer = self.serializer_class(data=data_from_frontend)
+        print("Data from frontend:", request.data)
+        serializer = self.serializer_class(data=request.data.get('data', {}))
         
         if serializer.is_valid():
+            print("Serializer is valid")
             email = serializer.validated_data.get("email")
             password = serializer.validated_data.get("password")
-            
-            user = CustomUser.objects.filter(email=email).first()
-            print("user login",user)
-            rooms = user.room_set.all()
-            print("all rooms",rooms)
+            user = User.objects.filter(email=email).first()
             if user:
                 if check_password(password, user.password):
-                    print("Password correct")
-                    return Response(CustomUserSerializer(user).data,status=status.HTTP_200_OK)
+                    user_authenticated = authenticate(request, username=user, password=password)
+                    request.user = user_authenticated
+                    print("user authenticated",user_authenticated)
+                    log_in_user = login(request, user)
+                    print("logged in user",log_in_user)
+                    request.session['current_user_id'] = user_authenticated.id
+                    custom_user = CustomUser.objects.filter(user=user).first()
+                    response_data = {
+                        'user': UserSerializer(user).data,
+                        'custom_user': CustomUserSerializer(custom_user).data
+                    }
+                    return Response(response_data, status=status.HTTP_200_OK)
                 else:
-                    print("Invalid password")
-                    return JsonResponse({'error': 'Invalid password'}, status=status.HTTP_400_BAD_REQUEST)
+                    print("Authentication failed.")
+                    return Response({'password': 'Invalid password'}, status=status.HTTP_404_NOT_FOUND)
             else:
-                print("Email not registered")
-                return JsonResponse({'error': 'Email is not registered'}, status=status.HTTP_404_NOT_FOUND)
+                print("User not found.")
+                return Response({'email': 'Invalid email'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            print(serializer.errors)
-            return JsonResponse({'error': 'Invalid email'}, status=status.HTTP_400_BAD_REQUEST)     
+            print("Serializer errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
      
 # Create Room    
 class CreateRoom(APIView):
@@ -109,11 +156,12 @@ class JoinRoom(APIView):
         print("id from frontend",id)
         if code:    
             room = Room.objects.filter(code=code).first()
-            user = CustomUser.objects.filter(id=id).first()
+            user = User.objects.filter(id=id).first()
             print("room found with that code",room)
             print("user found with that id",user)
             if room:
                 if user:
+                    request.session['current_room_code'] = code
                     if Membership.objects.filter(user=user,room=room).exists():
                         print("User exist in the rooms")
                         return JsonResponse({'messages': 'User already in this room'}, status=status.HTTP_200_OK)
@@ -124,18 +172,20 @@ class JoinRoom(APIView):
                 else:
                     return JsonResponse({'error':'invalid credential'},status=status.HTTP_404_NOT_FOUND)
             else:
-                return Response({'error':'Invalid room code'},status=status.HTTP_404_NOT_FOUND)
+                return JsonResponse({'error':'Invalid room code'},status=status.HTTP_404_NOT_FOUND)
         else:
-            return Response({'error':'Code is required'},status=status.HTTP_400_BAD_REQUEST) 
+            return JsonResponse({'error':'Code is required'},status=status.HTTP_400_BAD_REQUEST) 
 #Get user room
 class getUserRoom(APIView):
     def get(self,request,format=None):
         id = request.GET.get('id')
-        print("the user id",id)
+        current_user_id = request.session.get('current_user_id')
+        print("current_user",current_user_id)
+        print("current_user",current_user_id)
+        print("current_user",current_user_id)
         if not self.request.session.exists(self.request.session.session_key):
             self.request.session.create()
-        user = CustomUser.objects.filter(id=id).first()
-        print("user",user)
+        user = User.objects.filter(id=id).first()
         if user:
             user_rooms = Room.objects.filter(members__id=id)
             print("user rooms",user_rooms)
@@ -155,7 +205,7 @@ class removeUserFromRoom(APIView):
         print("is host",is_host)
         print("room id",room_id)
         print("user id",user_id)
-        user = CustomUser.objects.filter(id=user_id).first()
+        user = User.objects.filter(id=user_id).first()
         room = Room.objects.filter(id=room_id).first()
         print("user removed",user)
         print("room from",room)

@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinLengthValidator,MaxLengthValidator
+from django.contrib.auth.models import User
 from uuid import uuid4
 from datetime import datetime
 import string
@@ -25,22 +26,19 @@ def unique_filename(instance, filename):
 
 #User Model
 class CustomUser(models.Model):
-    first_name = models.CharField( max_length = 50,null=False, blank=False)
-    last_name = models.CharField(max_length = 50, null=False, blank=False)
-    username = models.CharField(max_length = 50, null=False, blank=False)
-    email = models.EmailField(max_length=50, null=False, blank=False)
-    password = models.CharField(max_length = 100, null=False, blank=False)
+    user = models.OneToOneField(User, on_delete = models.CASCADE,default=None)
     profile_picture = models.ImageField(upload_to=unique_filename, blank=False, null=False)
+
     
 #Room modal
 class Room(models.Model):
     code = models.CharField(max_length = 8, default = generate_unique_code, unique = True)
-    host = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
+    host = models.ForeignKey(User,on_delete=models.CASCADE)
     guest_can_pause = models.BooleanField(null = False, default = False)
     votes_to_skip = models.IntegerField(null = False, default = 1)
     created_at = models.DateTimeField(auto_now_add = True)
-    members = models.ManyToManyField(CustomUser, through="Membership",related_name='joined_rooms')
+    members = models.ManyToManyField(User, through="Membership",related_name='joined_rooms')
 class Membership(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     date_joined = models.DateField(default=datetime.now)

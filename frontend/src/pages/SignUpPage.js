@@ -18,13 +18,13 @@ const SignUpPage = () => {
   });
 
   const [errors, setErrors] = useState({
-    first_name: false,
-    last_name: false,
-    username: false,
-    email: false,
-    password: false,
-    profile_picture: false,
-    passwordMatch: false,
+    first_name: "",
+    last_name: "",
+    username: "",
+    email: "",
+    password: "",
+    profile_picture: "",
+    passwordMatch: "",
   });
 
   const handleFormChange = (event) => {
@@ -37,13 +37,19 @@ const SignUpPage = () => {
 
     setErrors({
       ...errors,
-      [name]: false,
+      [name]: "",
     });
+    if (name === "confirmPassword" || name === "password") {
+      if (errors.passwordMatch) {
+        setErrors({ ...errors, passwordMatch: "" });
+      }
+    }
   };
 
   const handleImageChange = (event) => {
     const { name } = event.target;
     setUser({ ...user, [name]: event.target.files[0] });
+    setErrors({ ...errors, profile_picture: "" });
   };
 
   const handleSignup = async () => {
@@ -55,7 +61,7 @@ const SignUpPage = () => {
         newError[key] = true;
         hasError = true;
       } else if (typeof user[key] === "string" && user[key].trim() === "") {
-        newError[key] = true;
+        newError[key] = `${key} is required`;
         hasError = true;
       }
     }
@@ -85,23 +91,46 @@ const SignUpPage = () => {
     fetch("/api/signup/", requestOptions)
       .then((response) => {
         setLoading(false);
-        return response.json();
-      })
-      .then((data) => {
-        setLoading(false);
-        if (!data.error) {
-          toast.success("User created");
-          setTimeout(() => {
-            navigate("/login");
-          }, 4000);
+        if (response.ok) {
+          return response.json();
         } else {
-          toast.error(data.error);
-          throw new Error();
+          return response.json().then((error) => {
+            console.log("Error:", error);
+            if (error.first_name) {
+              setErrors({ first_name: error.first_name });
+              throw new Error();
+            } else if (error.last_name) {
+              setErrors({ last_name: error.last_name });
+              throw new Error();
+            } else if (error.username) {
+              setErrors({ username: error.username });
+              throw new Error();
+            } else if (error.email) {
+              setErrors({ email: error.email });
+              throw new Error();
+            } else if (error.password) {
+              setErrors({ password: error.password });
+              throw new Error();
+            } else if (error.profile_picture) {
+              setErrors({ profile_picture: error.profile_picture });
+              throw new Error();
+            } else {
+              toast.error("Something went wrong");
+              throw new Error();
+            }
+          });
         }
       })
-      .then((error) => {
+      .then((data) => {
+        console.log("User created:", data);
+        toast.success("User created successfully!");
+        setTimeout(() => {
+          navigate("/login");
+        }, 4000);
+      })
+      .catch((error) => {
         setLoading(false);
-        console.log(error);
+        console.error(error);
       });
   };
 
@@ -139,8 +168,8 @@ const SignUpPage = () => {
               placeholder="First Name"
               name="first_name"
               value={user.first_name}
-              error={errors.first_name}
-              helperText={errors.first_name && "First Name is Required"}
+              error={!!errors.first_name}
+              helperText={errors.first_name}
               onChange={handleFormChange}
             />
           </Grid>
@@ -152,8 +181,8 @@ const SignUpPage = () => {
               placeholder="Last Name"
               name="last_name"
               value={user.last_name}
-              error={errors.last_name}
-              helperText={errors.last_name && "Last Name is required"}
+              error={!!errors.last_name}
+              helperText={errors.last_name}
               onChange={handleFormChange}
             />
           </Grid>
@@ -165,8 +194,8 @@ const SignUpPage = () => {
               placeholder="Username"
               name="username"
               value={user.username}
-              error={errors.username}
-              helperText={errors.username && "Username is required"}
+              error={!!errors.username}
+              helperText={errors.username}
               onChange={handleFormChange}
             />
           </Grid>
@@ -178,8 +207,8 @@ const SignUpPage = () => {
               placeholder="Email"
               name="email"
               value={user.email}
-              error={errors.email}
-              helperText={errors.email && "Email is required"}
+              error={!!errors.email}
+              helperText={errors.email}
               onChange={handleFormChange}
             />
           </Grid>
@@ -191,9 +220,9 @@ const SignUpPage = () => {
               placeholder="Password"
               name="password"
               value={user.password}
-              error={errors.password || errors.passwordMatch}
+              error={!!errors.password || !!errors.passwordMatch}
               helperText={
-                (errors.password && "Password is required") ||
+                (errors.password && errors.password) ||
                 (errors.passwordMatch && "Password don't match")
               }
               onChange={handleFormChange}
@@ -207,7 +236,7 @@ const SignUpPage = () => {
               placeholder="Confirm password"
               name="confirmPassword"
               value={user.confirmPassword}
-              error={errors.confirmPassword || errors.passwordMatch}
+              error={!!errors.confirmPassword || !!errors.passwordMatch}
               helperText={
                 (errors.confirmPassword && "Confirm password is required") ||
                 (errors.passwordMatch && "Password don't match")
@@ -222,8 +251,7 @@ const SignUpPage = () => {
               type="file"
               variant="standard"
               name="profile_picture"
-              accept="image/png, image/jpeg"
-              error={errors.profile_picture}
+              error={!!errors.profile_picture}
               helperText={errors.profile_picture && "Image is required"}
               onChange={handleImageChange}
             />

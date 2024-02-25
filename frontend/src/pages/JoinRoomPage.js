@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Grid, Typography, Button, TextField, Box, Paper } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
 
 const JoinRoomPage = () => {
   const navigate = useNavigate();
@@ -10,7 +11,10 @@ const JoinRoomPage = () => {
   const { id } = useSelector((state) => state.user.currentUser);
 
   const handleClick = () => {
-    console.log(code);
+    if (code === "") {
+      setErrorValue("Code required");
+      return;
+    }
     const requestOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -20,19 +24,26 @@ const JoinRoomPage = () => {
     console.log(requestOptions.body);
     fetch("/api/join-room/", requestOptions)
       .then((response) => {
-        return response.json();
+        console.log("first response", response);
+        if (response.ok) {
+          return response.json();
+        } else {
+          return response.json().then((error) => {
+            console.log("second response", error);
+            throw new Error(error.error);
+          });
+        }
       })
       .then((data) => {
         console.log("Responded data", data);
-        if (data?.error) {
-          throw new Error();
-        } else {
+        setTimeout(() => {
           navigate(`/room/${code}`);
-        }
+        }, 4000);
       })
       .catch((error) => {
         console.log("log in catch", error);
-        setErrorValue(error);
+        setErrorValue(error.message);
+        toast.error(error.message);
       });
   };
   return (
@@ -60,7 +71,10 @@ const JoinRoomPage = () => {
               error={errorValue ? true : false}
               value={code}
               helperText={errorValue.toString()}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => {
+                setCode(e.target.value);
+                setErrorValue("");
+              }}
             />
           </Grid>
           <Grid item xs={12} align="center">
