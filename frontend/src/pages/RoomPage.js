@@ -1,4 +1,11 @@
-import { Box, Paper, Typography, Grid, Button } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Typography,
+  Grid,
+  Button,
+  ButtonGroup,
+} from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -92,71 +99,98 @@ const RoomPage = () => {
           flexDirection: "column",
           gap: "20px",
           padding: "30px 20px",
-          width: "30%",
+          width: "100%",
           border: "2px solid red",
         }}
       >
-        <Grid container rowSpacing={2}>
-          <Grid item xs={6}>
-            <Typography> Code</Typography>
-          </Grid>
-          <Grid item xs={6} align="center">
-            <Typography>{roomData?.code}</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography>Guest Can Pause</Typography>
-          </Grid>
-          <Grid item xs={6} align="center">
-            <Typography>{roomData?.guest_can_pause.toString()}</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography>Host</Typography>
-          </Grid>
-          <Grid item xs={6} align="center">
-            <Typography>{roomData?.host}</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography>Is Host</Typography>
-          </Grid>
-          <Grid item xs={6} align="center">
-            <Typography>{roomData?.is_host.toString()}</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography>Votes To Skip</Typography>
-          </Grid>
-          <Grid item xs={6} align="center">
-            <Typography>{roomData?.votes_to_skip}</Typography>
-          </Grid>
-          <Grid item xs={12} align="center">
-            <Button
-              color="warning"
-              variant="contained"
-              onClick={handleLeaveRoom}
-            >
-              Leave Room
-            </Button>
-          </Grid>
-          {roomData?.is_host && (
-            <Grid item xs={12} align="center">
+        <Grid container justifyContent={"center"} alignItems={"center"}>
+          <Grid item xs={8} align="center">
+            <ButtonGroup>
+              <Button
+                color="primary"
+                variant="contained"
+                component={Link}
+                to={`/albums/${roomData?.code}`}
+              >
+                Get Album
+              </Button>
               <Button
                 color="warning"
                 variant="contained"
                 component={Link}
-                to={`/room/edit/${code}`}
+                to={`/tracks/${roomData?.code}`}
               >
-                Edit Room
+                Get Track
+              </Button>
+            </ButtonGroup>
+          </Grid>
+        </Grid>
+        <Grid container rowSpacing={2}>
+          <Grid container item xs={3}>
+            <Grid item xs={6}>
+              <Typography> Code</Typography>
+            </Grid>
+            <Grid item xs={6} align="center">
+              <Typography>{roomData?.code}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography>Guest Can Pause</Typography>
+            </Grid>
+            <Grid item xs={6} align="center">
+              <Typography>{roomData?.guest_can_pause.toString()}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography>Host</Typography>
+            </Grid>
+            <Grid item xs={6} align="center">
+              <Typography>{roomData?.host}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography>Is Host</Typography>
+            </Grid>
+            <Grid item xs={6} align="center">
+              <Typography>{roomData?.is_host.toString()}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography>Votes To Skip</Typography>
+            </Grid>
+            <Grid item xs={6} align="center">
+              <Typography>{roomData?.votes_to_skip}</Typography>
+            </Grid>
+          </Grid>
+          <Grid container item xs={7} sx={{ border: "3px solid red" }}></Grid>
+          <Grid container item xs={2}>
+            <Grid item xs={12} align="center">
+              <Button
+                color="warning"
+                variant="contained"
+                onClick={handleLeaveRoom}
+              >
+                Leave Room
               </Button>
             </Grid>
-          )}
-          <Grid item xs={12} align="center">
-            <Button
-              color="primary"
-              variant="contained"
-              component={Link}
-              to="/home"
-            >
-              Back
-            </Button>
+            {roomData?.is_host && (
+              <Grid item xs={12} align="center">
+                <Button
+                  color="warning"
+                  variant="contained"
+                  component={Link}
+                  to={`/room/edit/${code}`}
+                >
+                  Edit Room
+                </Button>
+              </Grid>
+            )}
+            <Grid item xs={12} align="center">
+              <Button
+                color="primary"
+                variant="contained"
+                component={Link}
+                to="/home"
+              >
+                Back
+              </Button>
+            </Grid>
           </Grid>
         </Grid>
       </Paper>

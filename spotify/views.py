@@ -4,8 +4,9 @@ from .credentilas import CLIENT_ID,CLIENT_SECRET,REDIRECT_URI
 from rest_framework.response import Response
 from rest_framework import status
 from requests import Request, post
-from .utils import update_or_create_user_tokens,is_spotify_authenticated
+from .utils import update_or_create_user_tokens,is_spotify_authenticated,execute_spotify_api_request
 from rest_framework.response import Response
+from api.models import Room
 
 
 
@@ -53,6 +54,21 @@ class IsAuthenticated(APIView):
         current_user_id = request.session.get('current_user_id')
         is_authenticated = is_spotify_authenticated(current_user_id)
         return Response({'status':is_authenticated},status=status.HTTP_200_OK)
+class GetSeveralAlbum(APIView):
+    def get(self,request):
+        current_room_code = request.session.get('current_room_code')
+        current_room = Room.objects.filter(code = current_room_code).first()
+        artistName = request.GET.get('artistName')
+        print("current room for album",current_room)
+        if current_room:
+            print("current user host id",current_room.host_id)
+            host = current_room.host_id
+            endpoint = 'https://api.spotify.com/v1/search'
+            response = execute_spotify_api_request(host_id=host,endpoint=endpoint,artistName=artistName)
+            print("response in view for album",response)
+            return Response({'albums':response},status=status.HTTP_200_OK)
+        else:
+            return Response({'error':'error happened'},status=status.HTTP_404_NOT_FOUND)
 
  
 
