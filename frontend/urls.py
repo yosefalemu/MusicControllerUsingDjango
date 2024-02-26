@@ -10,5 +10,7 @@ urlpatterns = [
     path("join",index, name="join"),
     path("create", index, name="create"),
     path("room/<str:roomCode>",index,name="eachRoom"),
-    path("room/edit/<str:roomCode>",index,name="editroom")
+    path("room/edit/<str:roomCode>",index,name="editroom"),
+    path("albums/<str:roomCode>",index,name="albums"),
+    path("tracks/<str:roomCode>",index,name="tracks"),
 ]

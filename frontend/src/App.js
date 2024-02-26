@@ -7,6 +7,8 @@ import JoinRoomPage from "./pages/JoinRoomPage";
 import CreateRoomPage from "./pages/CreateRoomPage";
 import RoomPage from "./pages/RoomPage";
 import EditRoomPage from "./pages/EditRoomPage";
+import AlbumsPage from "./pages/AlbumsPage";
+import TracksPage from "./pages/TracksPage";
 
 const App = () => {
   return (
@@ -19,6 +21,8 @@ const App = () => {
         <Route path="/create" element={<CreateRoomPage />} />
         <Route path="/room/:roomCode" element={<RoomPage />} />
         <Route path="/room/edit/:roomCode" element={<EditRoomPage />} />
+        <Route path="/albums/:roomCode" element={<AlbumsPage />} />
+        <Route path="/tracks/:roomCode" element={<TracksPage />} />
       </Routes>
     </Router>
   );

@@ -3,10 +3,11 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import SpotifyToken
 from django.contrib.auth.models import User
-from requests import post
+from requests import post,put,get
 from .credentilas import CLIENT_ID,CLIENT_SECRET
 
 def get_user_tokens(current_user_id):
+    print("current_user_id",current_user_id)
     user_token = SpotifyToken.objects.filter(user_id = current_user_id).first()
     print("current user found",user_token)
     print("current user found",user_token)
@@ -45,12 +46,7 @@ import requests
 #         print("access token in refresh token",access_token)
 #         print("refresh token in refresh token",refresh_token)
 #         print("token type in refresh token",token_type)
-#         print("expires in in refresh token",expires_in)
-        
-        
-
-
-    
+#         print("expires in in refresh token",expires_in)   
 def refresh_token(current_user_id):
     refresh_token = get_user_tokens(current_user_id).refresh_token
     print("refresh token that found",refresh_token)
@@ -100,6 +96,32 @@ def is_spotify_authenticated(current_user_id):
         if expiry_data <= timezone.now():
             refresh_token(current_user_id)
         return True
-    return False 
+    return False
+def execute_spotify_api_request(host_id,endpoint,artistName, post_ = False, put_ = False):
+    current_user = get_user_tokens(current_user_id=host_id)
+    print("current user access token",current_user.access_token)
+    print("current user to fetch album",current_user)
+    headers = {'Content-Type': 'application/json',
+               'Authorization': "Bearer " + current_user.access_token}
+    params = {
+        "q": f"artist:{artistName}",
+        "type": "album",
+        "limit": 50
+    }
+    if post_:
+        post(endpoint, headers=headers)
+    if put_:
+        put(endpoint, headers=headers)  
+    response = requests.get(endpoint, headers=headers, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        albums = data.get("albums", {}).get("items", [])
+        for album in albums:
+            print("Album:", album["name"])
+        return albums
+    else:
+        print(f"Error: {response.status_code}")
+        return None
+     
             
      
